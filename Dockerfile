@@ -1,28 +1,33 @@
 #syntax=docker/dockerfile:1
 
 #Build stage
-FROM golang:1.24-alpine AS builder
-LABEL org.opencontainers.image.title="Go Web Server" \
-      org.opencontainers.image.description="A simple Go web server containerized with Docker"
-      org.opencontainers.image.authors="adhiambobrender2@gmail.com"
+FROM golang:1.26-alpine AS builder
 
-WORKDIR / app
 
-COPY go.mod go.sum
-RUN go mod download
+WORKDIR /app
+
+COPY go.mod ./
 
 COPY . .
 
-RUN go build -o /app/webserver
+RUN go build -o server .
 
 #Final image
-FROM alpine:3.21
-LABEL org.opencontainers.image.title="Go Web Server" \
-      org.opencontainers.image.description="A simple Go web server containerized with Docker"
-      org.opencontainers.image.authors="adhiambobrender2@gmail.com"
 
-COPY --from=builder /app/webserver /webserver
+FROM alpine:latest
+
+LABEL org.opencontainers.image.title="Go Web Server" \
+      org.opencontainers.image.description="A simple Go web server containerized with Docker" \
+      org.opencontainers.image.authors="adhiambobrender2@gmail.com"
+      
+
+WORKDIR /app      
+
+COPY --from=builder /app/server .
+COPY --from=builder /app/banners ./banners
+COPY --from=builder /app/static ./static
+COPY --from=builder /app/template ./template
 
 EXPOSE 8080
 
-CMD ["/webserver"]
+CMD ["./server"]
